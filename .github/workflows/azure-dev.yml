@@ -36,16 +36,6 @@ jobs:
       - name: Install azd
         uses: Azure/setup-azd@v0.1.0
 
-      - name: Create filter to check if infra/ has changed
-        uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            infra:
-              - 'infra/**'
-            appcode:
-              - 'src/**'
-              
       - name: Log in with Azure (Federated Credentials)
         if: ${{ env.AZURE_CLIENT_ID != '' }}
         run: |
@@ -55,16 +45,7 @@ jobs:
             --tenant-id "$Env:AZURE_TENANT_ID"
         shell: pwsh
 
-      - name: Refresh the environment to grab values when re-provisioning is not needed
-        if: steps.filter.outputs.infra == 'false'
-        run: azd env refresh --no-prompt
-        env:
-          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
-          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
       - name: Provision Infrastructure
-        if: steps.filter.outputs.infra == 'true'
         run: azd provision --no-prompt
         env:
           AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
@@ -72,7 +53,6 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy Application
-        if: steps.filter.outputs.appcode == 'true'
         run: azd deploy --no-prompt
         env:
           AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
